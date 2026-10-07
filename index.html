@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ma to-do list</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#101010; --surface:#191919; --surface2:#212121; --line:#2E2E2E;
+    --ink:#F4F4F4; --muted:#9A9A9A; --accent:#4FBF87; --ok:#4FBF87; --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);
+       font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       -webkit-font-smoothing:antialiased}
+  body{padding:24px 16px 80px;line-height:1.5}
+  .wrap{max-width:880px;margin:0 auto}
+  .brand{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:700}
+  h1{font-size:clamp(1.6rem,5.4vw,2.4rem);font-weight:700;letter-spacing:-.02em;line-height:1.12;margin:10px 0 10px}
+  h2{font-size:.95rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:30px 0 12px}
+  h3{font-size:1.05rem;font-weight:700;margin:26px 0 10px}
+  .lede{color:var(--muted);max-width:62ch}
+  p+p{margin-top:10px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+  .btn{appearance:none;border:0;border-radius:999px;background:var(--accent);color:#0C0C0C;
+       font-family:inherit;font-size:1rem;font-weight:700;padding:14px 26px;cursor:pointer;transition:.15s}
+  .btn:hover{filter:brightness(1.12)}
+  .btn:disabled{opacity:.35;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .screen{display:none}
+  .screen.on{display:block}
+  .top{position:sticky;top:0;z-index:20;background:rgba(16,16,16,.93);backdrop-filter:blur(8px);
+       margin:-24px -16px 18px;padding:12px 16px 10px;border-bottom:1px solid var(--line)}
+  .meta{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:8px;gap:10px}
+  .track{height:4px;background:var(--surface2);border-radius:999px;overflow:hidden}
+  .fill{height:100%;background:var(--accent);width:0;transition:width .2s}
+  .qnum{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:700}
+  .q{font-size:clamp(1.1rem,3.6vw,1.4rem);font-weight:500;margin:8px 0 20px;line-height:1.35}
+  .opts{display:flex;flex-direction:column;gap:10px}
+  .opt{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;
+       background:var(--surface);border:1px solid var(--line);border-radius:12px;
+       color:var(--ink);font-family:inherit;font-size:.98rem;padding:14px 16px;cursor:pointer;transition:.12s}
+  .opt:hover{border-color:#4A4A4A}
+  .opt[aria-pressed="true"]{border-color:var(--accent);background:#1B1718}
+  .opt .k{flex:0 0 26px;height:26px;border-radius:50%;background:var(--surface2);border:1px solid var(--line);
+       display:grid;place-items:center;font-size:.76rem;font-weight:700;color:var(--muted)}
+  .opt[aria-pressed="true"] .k{background:var(--accent);border-color:var(--accent);color:#0C0C0C}
+  .nav{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
+  .verdict{border-left:3px solid var(--accent);padding-left:18px;margin:18px 0 26px}
+  .score{display:flex;align-items:baseline;gap:10px;margin:16px 0 6px}
+  .score .n{font-size:clamp(2.6rem,11vw,4rem);font-weight:700;line-height:1;letter-spacing:-.03em;
+       font-variant-numeric:tabular-nums}
+  .score .d{color:var(--muted)}
+  .bars{display:flex;flex-direction:column;gap:10px;margin:18px 0}
+  .brow{display:grid;grid-template-columns:1fr;gap:6px;background:var(--surface);border:1px solid var(--line);
+       border-radius:12px;padding:13px 15px}
+  .brow.hot{border-color:var(--accent);background:#1B1718}
+  .brow .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .brow .nm{font-weight:700}
+  .brow .vl{font-variant-numeric:tabular-nums;font-weight:700;color:var(--muted)}
+  .brow.hot .vl{color:var(--accent)}
+  .brow .g{height:6px;background:var(--surface2);border-radius:999px;overflow:hidden}
+  .brow .g i{display:block;height:100%;background:#4A4A4A}
+  .brow.hot .g i{background:var(--accent)}
+  .brow .cm{font-size:.86rem;color:var(--muted)}
+  .det{border-top:1px solid var(--line);padding:13px 0;display:grid;
+       grid-template-columns:34px 1fr;gap:12px;align-items:start}
+  .det .ix{font-size:.78rem;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:2px}
+  .det .tx{min-width:0}
+  .det .tx b{display:block;font-weight:500;margin-bottom:4px}
+  .det .tx span{color:var(--muted);font-size:.88rem}
+  .det.ko .ix{color:var(--accent)}
+  .tag{display:inline-block;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+       padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+  .tag.a{border-color:var(--accent);color:var(--accent)}
+  .tag.o{border-color:var(--ok);color:var(--ok)}
+  .chk{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+  .chk input{appearance:none;flex:0 0 20px;height:20px;margin-top:2px;border:1px solid var(--line);
+       border-radius:5px;background:var(--surface2);cursor:pointer}
+  .chk input:checked{background:var(--accent);border-color:var(--accent)}
+  .chk span{font-size:.94rem}
+  .note{margin-top:26px;color:var(--muted);font-size:.88rem;border-top:1px solid var(--line);padding-top:16px}
+  table.t{width:100%;border-collapse:collapse;font-size:.92rem}
+  table.t th,table.t td{border:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
+  table.t th{background:var(--surface2);font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  input.f,select.f,textarea.f{font-family:inherit;font-size:.95rem;color:var(--ink);background:var(--surface2);
+       border:1px solid var(--line);border-radius:9px;padding:10px 12px;width:100%}
+  input.f:focus,select.f:focus,textarea.f:focus{outline:0;border-color:var(--accent)}
+  footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:.78rem;
+       display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  @media print{ body{background:#fff;color:#000} .btn,.top{display:none} }
+
+  .row{display:grid;grid-template-columns:28px 1fr 96px 92px 34px;gap:8px;align-items:center;
+       padding:8px 0;border-top:1px solid var(--line)}
+  .row .ix{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+  .row .del{appearance:none;border:0;background:transparent;color:var(--muted);font-family:inherit;
+       font-size:1.1rem;cursor:pointer;line-height:1}
+  .row .del:hover{color:var(--accent)}
+  .hdr{display:grid;grid-template-columns:28px 1fr 96px 92px 34px;gap:8px;
+       font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;
+       padding-bottom:6px}
+  @media (max-width:620px){
+    .hdr{display:none}
+    .row{grid-template-columns:28px 1fr 34px;grid-template-areas:"ix t del" ". p p" ". d d";row-gap:6px}
+    .row .ix{grid-area:ix} .row .t{grid-area:t} .row .p{grid-area:p} .row .d{grid-area:d} .row .del{grid-area:del}
+  }
+  .grp{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px;margin-bottom:12px}
+  .grp .ttl{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
+  .grp .ttl b{font-size:1rem}
+  .grp .ttl i{font-style:normal;color:var(--muted);font-size:.85rem;font-variant-numeric:tabular-nums}
+  .grp ul{list-style:none}
+  .grp li{font-size:.92rem;padding:7px 0;border-top:1px solid var(--line);display:flex;gap:10px}
+  .grp li .du{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}
+  .grp .warn{color:var(--accent);font-size:.86rem}
+</style>
+<style>
+/* 23ms-theme */
+:root{
+    --on-accent:#0C0C0C; --accent:#4FBF87;
+    --soft:#1B1718; --soft:color-mix(in srgb, #4FBF87 12%, #191919);
+}
+:root[data-theme="light"]{
+    --bg:#FAFAF7; --surface:#FFFFFF; --surface2:#F2F2ED; --line:#DFDFD8;
+    --ink:#16161A; --muted:#5F5F5A; --ok:#2F8F62; --on-accent:#FFFFFF;
+    --accent:#2F8F62; --accent-dim:#F7ECEE;
+    --soft:#F4F1EE; --soft:color-mix(in srgb, #2F8F62 10%, #FFFFFF);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#FAFAF7; --surface:#FFFFFF; --surface2:#F2F2ED; --line:#DFDFD8;
+    --ink:#16161A; --muted:#5F5F5A; --ok:#2F8F62; --on-accent:#FFFFFF;
+    --accent:#2F8F62; --accent-dim:#F7ECEE;
+    --soft:#F4F1EE; --soft:color-mix(in srgb, #2F8F62 10%, #FFFFFF);
+}
+}
+.btn{color:var(--on-accent)}
+.opt:hover{border-color:var(--muted)}
+.opt[aria-pressed="true"]{background:var(--soft)}
+.opt[aria-pressed="true"] .k{color:var(--on-accent)}
+.brow.hot{background:var(--soft)}
+.brow .g i{background:var(--muted)}
+.vf button[aria-pressed="true"]{color:var(--on-accent)}
+.pil[aria-pressed="true"]{color:var(--on-accent)}
+ol.list li.done{background:var(--soft)}
+.band.me{background:var(--soft)}
+.sheet{background:#FFFFFF;border:1px solid var(--line)}
+.top,.bar{background:var(--bg)}
+.theme{position:fixed;right:14px;bottom:14px;z-index:60;appearance:none;cursor:pointer;
+  font-family:inherit;font-size:.78rem;font-weight:700;padding:9px 15px;border-radius:999px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  box-shadow:0 4px 16px rgba(0,0,0,.22)}
+.theme:hover{border-color:var(--accent);color:var(--accent)}
+@media print{
+  :root{ --bg:#FFFFFF; --surface:#FFFFFF; --surface2:#F4F4F0; --line:#CCCCC6;
+         --ink:#000000; --muted:#434341; --ok:#2F8F62; --on-accent:#FFFFFF;
+         --accent:#2F8F62; --soft:#F3F3EF; }
+  html,body{background:#FFFFFF;color:#000000}
+  .theme,.nav,.top,.bar{display:none}
+  .card,.brow,.grp,.det,.ex{break-inside:avoid}
+}
+</style>
+<script>(function(){try{var t=localStorage.getItem("23ms-theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();</script>
+</head>
+<body>
+<button class="theme" id="theme" type="button" aria-label="Changer l'affichage">Clair</button>
+
+<div class="wrap">
+
+  <section id="s-intro" class="screen on">
+    <span class="brand">23 MindSet</span>
+    <h1>Ma to-do list</h1>
+    <p class="lede">Trois colonnes : la tâche, sa priorité, le temps qu'elle demande. Et un total, en bas, qui ne mentira pas.</p>
+    <div class="card" style="margin-top:26px">
+      <p>Listez les tâches de votre prochaine journée de travail. Pour chacune, estimez la durée en minutes et posez une priorité.</p>
+      <p style="color:var(--muted)">Comptez dix minutes. Rien n'est envoyé nulle part : vous pouvez imprimer votre liste à la fin.</p>
+      <p style="margin-top:20px"><button class="btn" id="go">Commencer ma liste</button></p>
+    </div>
+    <footer><span>D'après le livret d'exercices Excellens Formation - mise en forme numérique 23 MindSet - Fares ATBA</span><span>To-do list du livret d'exercices</span></footer>
+  </section>
+
+  <section id="s-q" class="screen">
+    <div class="top">
+      <div class="meta"><span id="cnt"></span><span id="sum"></span></div>
+      <div class="track"><div class="fill" id="fill"></div></div>
+    </div>
+    <h1 style="margin-top:0">Ma to-do list</h1>
+    <p class="lede" style="margin-bottom:18px">UI urgent et important &middot; uI important, pas urgent &middot; Ui urgent, pas important &middot; ui ni l'un ni l'autre.</p>
+    <div id="rows"></div>
+    <div class="nav">
+      <button class="btn ghost" id="add">Ajouter une tâche</button>
+      <button class="btn" id="voir" disabled>Voir mon bilan</button>
+    </div>
+    <p class="note" id="hint">Le bilan s'affiche dès que trois tâches au moins portent un libellé et une durée.</p>
+  </section>
+
+  <section id="s-res" class="screen">
+    <span class="brand">Votre bilan</span>
+    <h1>Ce que votre liste dit de votre journée</h1>
+    <div class="score"><span class="n" id="n"></span><span class="d">de travail listé</span></div>
+    <p class="lede" id="charge"></p>
+    <div class="bars" id="rep"></div>
+    <h2>Votre liste, classée par priorité</h2>
+    <div id="liste"></div>
+    <h2>Corrigé indicatif</h2>
+    <div class="card" style="margin-bottom:14px">
+      <p>Il n'y a pas de bonne liste unique : la vôtre dépend de votre poste. En revanche, une liste utile répond à cinq critères.</p>
+      <p style="color:var(--muted)">Relisez votre liste et cochez ce qui est vrai.</p>
+    </div>
+    <div id="crit"></div>
+    <h2>Ce que l'exercice met en évidence</h2>
+    <div id="lecons"></div>
+    <p style="margin-top:26px;display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn ghost" id="back">Modifier ma liste</button>
+      <button class="btn ghost" id="print">Imprimer ou enregistrer en PDF</button>
+    </p>
+    <footer><span>D'après le livret d'exercices Excellens Formation - mise en forme numérique 23 MindSet - Fares ATBA</span><span>Vos réponses restent sur votre appareil.</span></footer>
+  </section>
+
+</div>
+<script>
+
+(function(){
+  "use strict";
+  var CRIT = ["Chaque ligne commence par un verbe d'action : on sait quoi faire en la lisant.", "Aucune ligne ne dépasse deux heures. Au-delà, ce n'est pas une tâche, c'est un projet : découpez-la.", "Chaque tâche porte une priorité, et la case « important, pas urgent » n'est pas vide.", "Le total tient dans le temps réellement disponible, imprévus compris : comptez un quart de la journée.", "Vous savez, pour chaque ligne, qui a fixé l'échéance et pour quand exactement."], LECON = [["Une liste n'est pas un plan", "Une to-do list sans durée ni priorité ne fait que déplacer l'angoisse du cerveau vers le papier. Ce qui soulage, c'est la durée estimée et la place dans la journée."], ["Écrire la tâche libère la tête", "Six expériences de Masicampo et Baumeister en 2011 montrent qu'une tâche inachevée continue d'occuper l'attention, et qu'écrire un plan pour la terminer suffit à faire cesser cet effet."], ["Le total est l'épreuve de vérité", "C'est le total des durées qui révèle si la journée est tenable. Sans total, on croit toujours que ça rentrera."], ["Ce qui n'a pas de durée n'a pas de place", "Une tâche sans durée estimée ne sera placée nulle part, donc faite nulle part. Mettez un chiffre, même approximatif."]];
+  var QUAD = [["UI","Urgent et important"],["uI","Important, pas urgent"],
+              ["Ui","Urgent, pas important"],["ui","Ni urgent ni important"]];
+  var data = [];
+  function $(id){ return document.getElementById(id); }
+  function show(id){
+    ["s-intro","s-q","s-res"].forEach(function(s){ $(s).classList.toggle("on", s===id); });
+    window.scrollTo(0,0);
+  }
+  function hm(m){
+    if(m<60) return m + " min";
+    var h = Math.floor(m/60), r = m%60;
+    return h + " h" + (r ? " " + (r<10?"0":"") + r : "");
+  }
+  function pretes(){ return data.filter(function(d){ return d.t.trim() && d.m > 0; }); }
+  function maj(){
+    var p = pretes(), tot = p.reduce(function(s,d){ return s+d.m; }, 0);
+    $("cnt").textContent = p.length + " t\u00e2che" + (p.length>1?"s":"") + " compl\u00e8te" + (p.length>1?"s":"");
+    $("sum").textContent = tot ? "total " + hm(tot) : "";
+    $("fill").style.width = Math.min(100, Math.round((tot/420)*100)) + "%";
+    $("voir").disabled = (p.length < 3);
+    $("hint").style.display = (p.length < 3) ? "" : "none";
+  }
+  function build(){
+    var box = $("rows"); box.innerHTML = "";
+    var h = document.createElement("div"); h.className="hdr";
+    ["", "T\u00e2che", "Priorit\u00e9", "Temps", ""].forEach(function(t){
+      var s = document.createElement("span"); s.textContent = t; h.appendChild(s);
+    });
+    box.appendChild(h);
+    data.forEach(function(d, k){
+      var r = document.createElement("div"); r.className="row";
+      var ix = document.createElement("span"); ix.className="ix"; ix.textContent = (k+1);
+      var ti = document.createElement("input"); ti.className="f t"; ti.type="text";
+      ti.placeholder = "Ce que vous avez \u00e0 faire"; ti.value = d.t;
+      ti.addEventListener("input", function(){ d.t = ti.value; maj(); });
+      var se = document.createElement("select"); se.className="f p";
+      var o0 = document.createElement("option"); o0.value=""; o0.textContent="-"; se.appendChild(o0);
+      QUAD.forEach(function(q){
+        var o = document.createElement("option"); o.value=q[0]; o.textContent=q[0]; se.appendChild(o);
+      });
+      se.value = d.q || "";
+      se.addEventListener("change", function(){ d.q = se.value; maj(); });
+      var nu = document.createElement("input"); nu.className="f d"; nu.type="number";
+      nu.min="0"; nu.step="5"; nu.placeholder="min"; nu.value = d.m ? d.m : "";
+      nu.addEventListener("input", function(){ d.m = parseInt(nu.value,10) || 0; maj(); });
+      var de = document.createElement("button"); de.className="del"; de.type="button";
+      de.textContent = "\u00d7"; de.title = "Supprimer cette ligne";
+      de.addEventListener("click", function(){ data.splice(k,1); if(!data.length){ ajoute(); } build(); });
+      r.appendChild(ix); r.appendChild(ti); r.appendChild(se); r.appendChild(nu); r.appendChild(de);
+      box.appendChild(r);
+    });
+    maj();
+  }
+  function ajoute(){ data.push({t:"", q:"", m:0}); }
+  function resultat(){
+    var p = pretes(), tot = p.reduce(function(s,d){ return s+d.m; }, 0);
+    $("n").textContent = hm(tot);
+    $("charge").textContent = tot > 420
+      ? "Vous avez list\u00e9 plus de sept heures de travail. Une journ\u00e9e ne contient pas sept heures disponibles : il faut arbitrer maintenant, pas \u00e0 17 heures."
+      : (tot > 315
+        ? "Entre cinq heures et demie et sept heures : la journ\u00e9e est pleine. Au premier impr\u00e9vu, quelque chose tombera. Lequel, c'est \u00e0 vous de le choisir d'avance."
+        : "Ce volume laisse de la place aux impr\u00e9vus. C'est ce qui rend une liste tenable.");
+    var rep = $("rep"); rep.innerHTML = "";
+    QUAD.forEach(function(q){
+      var ks = p.filter(function(d){ return d.q === q[0]; });
+      var sm = ks.reduce(function(s,d){ return s+d.m; }, 0);
+      var row = document.createElement("div");
+      row.className = "brow" + (q[0]==="uI" && !ks.length ? " hot" : "");
+      var hd = document.createElement("div"); hd.className="hd";
+      var nm = document.createElement("span"); nm.className="nm"; nm.textContent = q[0] + " \u00b7 " + q[1];
+      var vl = document.createElement("span"); vl.className="vl";
+      vl.textContent = ks.length + " \u00b7 " + hm(sm);
+      hd.appendChild(nm); hd.appendChild(vl);
+      var g = document.createElement("div"); g.className="g";
+      var it = document.createElement("i");
+      it.style.width = (tot ? Math.round((sm/tot)*100) : 0) + "%";
+      g.appendChild(it);
+      row.appendChild(hd); row.appendChild(g);
+      if(q[0]==="uI" && !ks.length){
+        var cm = document.createElement("div"); cm.className="cm";
+        cm.textContent = "Rien d'important et non urgent dans votre liste. C'est la case qui pr\u00e9pare les semaines suivantes : si elle reste vide, tout finit par devenir urgent.";
+        row.appendChild(cm);
+      }
+      rep.appendChild(row);
+    });
+    var li = $("liste"); li.innerHTML = "";
+    var ordre = QUAD.map(function(q){ return q[0]; }).concat([""]);
+    ordre.forEach(function(code){
+      var ks = p.filter(function(d){ return (d.q || "") === code; });
+      if(!ks.length) return;
+      var lab = code ? QUAD.filter(function(q){ return q[0]===code; })[0] : ["-","Sans priorit\u00e9 pos\u00e9e"];
+      var sm = ks.reduce(function(s,d){ return s+d.m; }, 0);
+      var g = document.createElement("div"); g.className="grp";
+      var t = document.createElement("div"); t.className="ttl";
+      var b = document.createElement("b"); b.textContent = lab[0] + " \u00b7 " + lab[1];
+      var ii = document.createElement("i"); ii.textContent = hm(sm);
+      t.appendChild(b); t.appendChild(ii); g.appendChild(t);
+      if(!code){
+        var w = document.createElement("div"); w.className="warn";
+        w.textContent = "Une t\u00e2che sans priorit\u00e9 sera faite dans l'ordre o\u00f9 elle arrive, pas dans l'ordre o\u00f9 elle compte.";
+        g.appendChild(w);
+      }
+      var ul = document.createElement("ul");
+      ks.forEach(function(d){
+        var l = document.createElement("li");
+        var tx = document.createElement("span"); tx.textContent = d.t;
+        var du = document.createElement("span"); du.className="du"; du.textContent = hm(d.m);
+        l.appendChild(tx); l.appendChild(du); ul.appendChild(l);
+      });
+      g.appendChild(ul); li.appendChild(g);
+    });
+    var cb = $("crit"); cb.innerHTML = "";
+    CRIT.forEach(function(c){
+      var l = document.createElement("label"); l.className="chk";
+      var x = document.createElement("input"); x.type="checkbox";
+      var s = document.createElement("span"); s.textContent = c;
+      l.appendChild(x); l.appendChild(s); cb.appendChild(l);
+    });
+    var lb = $("lecons"); lb.innerHTML = "";
+    LECON.forEach(function(le, k){
+      var d = document.createElement("div"); d.className="det";
+      var ix = document.createElement("span"); ix.className="ix"; ix.textContent = (k+1);
+      var tx = document.createElement("span"); tx.className="tx";
+      var b = document.createElement("b"); b.textContent = le[0];
+      var s = document.createElement("span"); s.textContent = le[1];
+      tx.appendChild(b); tx.appendChild(s);
+      d.appendChild(ix); d.appendChild(tx); lb.appendChild(d);
+    });
+    show("s-res");
+  }
+  $("go").addEventListener("click", function(){
+    if(!data.length){ for(var k=0;k<6;k++){ ajoute(); } }
+    build(); show("s-q");
+  });
+  $("add").addEventListener("click", function(){ ajoute(); build();
+    var rr = $("rows").querySelectorAll(".row");
+    if(rr.length){ rr[rr.length-1].querySelector("input.t").focus(); } });
+  $("voir").addEventListener("click", function(){ if(pretes().length >= 3){ resultat(); } });
+  $("back").addEventListener("click", function(){ build(); show("s-q"); });
+  $("print").addEventListener("click", function(){ window.print(); });
+})();
+
+</script>
+<script>
+(function(){
+  "use strict";
+  var r = document.documentElement, b = document.getElementById("theme");
+  if(!b) return;
+  function cur(){
+    var a = r.getAttribute("data-theme");
+    if(a === "light" || a === "dark") return a;
+    return (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches)
+      ? "light" : "dark";
+  }
+  function peindre(){
+    var c = cur();
+    b.textContent = (c === "dark") ? "\u2600 Clair" : "\u263E Sombre";
+    b.setAttribute("aria-label", (c === "dark")
+      ? "Passer \u00e0 l'affichage clair" : "Passer \u00e0 l'affichage sombre");
+  }
+  b.addEventListener("click", function(){
+    var n = (cur() === "dark") ? "light" : "dark";
+    r.setAttribute("data-theme", n);
+    try { localStorage.setItem("23ms-theme", n); } catch(e){}
+    peindre();
+  });
+  if(window.matchMedia){
+    try {
+      window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", function(){
+        if(!r.getAttribute("data-theme")) peindre();
+      });
+    } catch(e){}
+  }
+  peindre();
+})();
+</script>
+</body>
+</html>
